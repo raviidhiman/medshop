@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block title %}Medicines — MedStock Pro{% endblock %}
+{% block page_title %}Inventory{% endblock %}
+
+{% block topbar_actions %}
+<a href="{{ url_for('add_medicine') }}" class="btn btn-primary btn-sm">+ Add</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- Search & Filter Bar -->
+<div class="card" style="margin-bottom:14px;">
+  <div class="search-row">
+    <div class="search-box" id="live-search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="live-search" placeholder="Search medicines..."
+             value="{{ search }}" autocomplete="off">
+      <div id="search-results" style="display:none;"></div>
+    </div>
+    <div class="filter-tabs">
+      <a href="{{ url_for('medicines') }}" class="filter-tab {% if filter == 'all' %}active{% endif %}">All</a>
+      <a href="{{ url_for('medicines') }}?filter=low" class="filter-tab {% if filter == 'low' %}active{% endif %}">⚠ Low</a>
+      <a href="{{ url_for('medicines') }}?filter=expired" class="filter-tab {% if filter == 'expired' %}active{% endif %}">🚫 Expired</a>
+      <a href="{{ url_for('medicines') }}?filter=expiring" class="filter-tab {% if filter == 'expiring' %}active{% endif %}">⏳ Soon</a>
+    </div>
+    <span class="result-count">{{ medicines|length }} result(s)</span>
+  </div>
+</div>
+
+<!-- Desktop Table View -->
+<div class="card table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Medicine</th>
+        <th>Category</th>
+        <th>Price</th>
+        <th>Stock</th>
+        <th>Expiry</th>
+        <th>Status</th>
+        <th style="text-align:right;">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for m in medicines %}
+      <tr>
+        <td>
+          <div class="medicine-name">{{ m.name }}</div>
+          <div class="medicine-mfg">{{ m.get('manufacturer', '—') }}</div>
+        </td>
+        <td>
+          {% if m.get('category') %}
+            <span class="badge badge-blue">{{ m.category }}</span>
+          {% else %}
+            <span class="badge badge-gray">—</span>
+          {% endif %}
+        </td>
+        <td><span class="price">₹{{ "%.2f"|format(m.price) }}</span></td>
+        <td>
+          {% if m.quantity == 0 %}
+            <span class="badge badge-red">Out</span>
+          {% elif m.quantity <= threshold %}
+            <span class="badge badge-orange">{{ m.quantity }}</span>
+          {% else %}
+            <span class="badge badge-green">{{ m.quantity }}</span>
+          {% endif %}
+        </td>
+        <td style="font-size:0.8rem; color:var(--text2); font-family:'JetBrains Mono',monospace; white-space:nowrap;">
+          {{ m.expiry_date }}
+        </td>
+        <td>
+          {% if m.expiry_date < today %}
+            <span class="badge badge-red">🚫 Expired</span>
+          {% elif m.quantity == 0 %}
+            <span class="badge badge-red">No Stock</span>
+          {% elif m.quantity <= threshold %}
+            <span class="badge badge-orange">Low</span>
+          {% else %}
+            <span class="badge badge-green">OK</span>
+          {% endif %}
+        </td>
+        <td>
+          <div class="action-row">
+            <a href="{{ url_for('edit_medicine', med_id=m._id) }}" class="btn btn-secondary btn-sm btn-icon" title="Edit">✏️</a>
+            <form method="POST" action="{{ url_for('delete_medicine', med_id=m._id) }}"
+                  onsubmit="return confirm('Delete {{ m.name }}?')">
+              <button type="submit" class="btn btn-danger btn-sm btn-icon" title="Delete">🗑</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="7">
+          <div class="empty-state">
+            <div class="empty-icon">💊</div>
+            <strong>No medicines found</strong>
+            <p>Try a different search or <a href="{{ url_for('add_medicine') }}" style="color:var(--accent);">add one</a>.</p>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Mobile Card View -->
+<div class="med-card-list">
+  {% for m in medicines %}
+  <div class="med-card">
+    <div class="med-card-top">
+      <div style="flex:1; min-width:0;">
+        <div class="med-card-name" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ m.name }}</div>
+        <div class="med-card-mfg">{{ m.get('manufacturer', '—') }}</div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0;">
+        {% if m.expiry_date < today %}
+          <span class="badge badge-red">🚫 Expired</span>
+        {% elif m.quantity == 0 %}
+          <span class="badge badge-red">No Stock</span>
+        {% elif m.quantity <= threshold %}
+          <span class="badge badge-orange">Low Stock</span>
+        {% else %}
+          <span class="badge badge-green">In Stock</span>
+        {% endif %}
+        {% if m.get('category') %}
+          <span class="badge badge-blue">{{ m.category }}</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="med-card-body">
+      <div class="med-card-field">
+        <label>Price</label>
+        <span class="price">₹{{ "%.2f"|format(m.price) }}</span>
+      </div>
+      <div class="med-card-field">
+        <label>Quantity</label>
+        <span>
+          {% if m.quantity == 0 %}
+            <span class="badge badge-red">0</span>
+          {% elif m.quantity <= threshold %}
+            <span class="badge badge-orange">{{ m.quantity }} units</span>
+          {% else %}
+            <span class="badge badge-green">{{ m.quantity }} units</span>
+          {% endif %}
+        </span>
+      </div>
+      <div class="med-card-field">
+        <label>Expiry Date</label>
+        <span style="font-family:'JetBrains Mono',monospace; font-size:0.8rem; color:{% if m.expiry_date < today %}var(--danger){% else %}var(--text2){% endif %};">
+          {{ m.expiry_date }}
+        </span>
+      </div>
+      {% if m.get('description') %}
+      <div class="med-card-field" style="grid-column:1/-1;">
+        <label>Notes</label>
+        <span style="font-size:0.8rem; color:var(--text2);">{{ m.description[:60] }}{% if m.description|length > 60 %}…{% endif %}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="med-card-actions">
+      <a href="{{ url_for('edit_medicine', med_id=m._id) }}" class="btn btn-secondary btn-sm">✏️ Edit</a>
+      <form method="POST" action="{{ url_for('delete_medicine', med_id=m._id) }}"
+            onsubmit="return confirm('Delete {{ m.name }}?')" style="flex:1;">
+        <button type="submit" class="btn btn-danger btn-sm btn-full">🗑 Delete</button>
+      </form>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">💊</div>
+    <strong>No medicines found</strong>
+    <p>Try a different search or <a href="{{ url_for('add_medicine') }}" style="color:var(--accent);">add one</a>.</p>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const input = document.getElementById('live-search');
+const resultsBox = document.getElementById('search-results');
+let debounceTimer;
+
+input.addEventListener('input', () => {
+  clearTimeout(debounceTimer);
+  const q = input.value.trim();
+  if (!q) { resultsBox.style.display = 'none'; return; }
+  debounceTimer = setTimeout(async () => {
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      if (!data.length) { resultsBox.style.display = 'none'; return; }
+      resultsBox.innerHTML = data.map(m => `
+        <div class="search-result-item" onclick="window.location='/medicines/edit/${m.id}'">
+          <div style="min-width:0; flex:1;">
+            <div style="font-weight:600; font-size:0.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${m.name}</div>
+            <div style="font-size:0.73rem; color:var(--text2);">${m.manufacturer || ''} ${m.category ? '· ' + m.category : ''}</div>
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <div style="font-family:monospace; font-size:0.85rem;">₹${m.price.toFixed(2)}</div>
+            <div>
+              ${m.is_expired ? '<span class="badge badge-red">Expired</span>' : ''}
+              ${m.is_low && !m.is_expired ? '<span class="badge badge-orange">Low</span>' : ''}
+              ${!m.is_expired && !m.is_low ? '<span class="badge badge-green">OK</span>' : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+      resultsBox.style.display = 'block';
+    } catch(e) { resultsBox.style.display = 'none'; }
+  }, 280);
+});
+
+document.addEventListener('click', e => {
+  if (!document.getElementById('live-search-box').contains(e.target))
+    resultsBox.style.display = 'none';
+});
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter')
+    window.location = `/medicines?search=${encodeURIComponent(input.value)}`;
+});
+</script>
+{% endblock %}

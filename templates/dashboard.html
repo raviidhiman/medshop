@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — MedStock Pro{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block topbar_actions %}
+<a href="{{ url_for('add_medicine') }}" class="btn btn-primary btn-sm">+ Add</a>
+{% endblock %}
+{% block content %}
+<div class="stats-grid">
+  <div class="stat-card blue"><div class="stat-icon">📦</div><div class="stat-value">{{ total }}</div><div class="stat-label">Total Medicines</div></div>
+  <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value">{{ in_stock }}</div><div class="stat-label">In Stock</div></div>
+  <div class="stat-card orange"><div class="stat-icon">⚠️</div><div class="stat-value">{{ low_stock }}</div><div class="stat-label">Low Stock</div></div>
+  <div class="stat-card red"><div class="stat-icon">🚫</div><div class="stat-value">{{ expired }}</div><div class="stat-label">Expired</div></div>
+</div>
+<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+  <a href="{{ url_for('add_medicine') }}" class="btn btn-primary" style="flex:1;min-width:130px;justify-content:center;">➕ Add Medicine</a>
+  <a href="{{ url_for('medicines') }}" class="btn btn-secondary" style="flex:1;min-width:130px;justify-content:center;">📋 View All</a>
+  <a href="{{ url_for('medicines') }}?filter=low" class="btn btn-secondary" style="flex:1;min-width:130px;justify-content:center;">⚠️ Low Stock</a>
+  <a href="{{ url_for('settings') }}" class="btn btn-secondary" style="flex:1;min-width:130px;justify-content:center;">⚙️ Email Setup</a>
+</div>
+{% if alerts.has_alerts %}
+<div style="background:linear-gradient(135deg,rgba(239,68,68,0.08),rgba(251,146,60,0.06));border:1px solid rgba(239,68,68,0.25);border-radius:var(--radius);padding:18px 20px;margin-bottom:18px;">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+    <span style="font-size:24px;">🔔</span>
+    <div style="flex:1;min-width:180px;">
+      <strong style="color:var(--danger);font-size:0.95rem;">Inventory Alerts Detected</strong>
+      <p style="font-size:0.8rem;color:var(--text2);margin-top:3px;">These issues need your attention</p>
+    </div>
+    <form method="POST" action="{{ url_for('send_alert') }}" style="flex-shrink:0;">
+      <button type="submit" class="btn btn-danger" style="white-space:nowrap;">📧 Send Alert Email</button>
+    </form>
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    {% if alerts.out_of_stock %}<a href="{{ url_for('medicines') }}?filter=low" style="text-decoration:none;"><span style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:#f87171;padding:5px 12px;border-radius:20px;font-size:0.78rem;font-weight:600;display:inline-flex;align-items:center;gap:5px;">❌ {{ alerts.out_of_stock|length }} Out of Stock</span></a>{% endif %}
+    {% if alerts.expired %}<a href="{{ url_for('medicines') }}?filter=expired" style="text-decoration:none;"><span style="background:rgba(220,38,38,0.12);border:1px solid rgba(220,38,38,0.3);color:#ef4444;padding:5px 12px;border-radius:20px;font-size:0.78rem;font-weight:600;display:inline-flex;align-items:center;gap:5px;">🚫 {{ alerts.expired|length }} Expired</span></a>{% endif %}
+    {% if alerts.low_stock %}<a href="{{ url_for('medicines') }}?filter=low" style="text-decoration:none;"><span style="background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.25);color:#fb923c;padding:5px 12px;border-radius:20px;font-size:0.78rem;font-weight:600;display:inline-flex;align-items:center;gap:5px;">⚠️ {{ alerts.low_stock|length }} Low Stock</span></a>{% endif %}
+    {% if alerts.expiring_soon %}<a href="{{ url_for('medicines') }}?filter=expiring" style="text-decoration:none;"><span style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:#fbbf24;padding:5px 12px;border-radius:20px;font-size:0.78rem;font-weight:600;display:inline-flex;align-items:center;gap:5px;">⏳ {{ alerts.expiring_soon|length }} Expiring Soon</span></a>{% endif %}
+  </div>
+</div>
+{% else %}
+<div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:var(--radius);padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+  <span style="font-size:20px;">✅</span>
+  <div style="flex:1;"><strong style="color:var(--accent2);font-size:0.9rem;">Inventory Healthy</strong><p style="font-size:0.78rem;color:var(--text2);margin-top:2px;">No stock or expiry issues found.</p></div>
+  <form method="POST" action="{{ url_for('send_alert') }}"><button type="submit" class="btn btn-secondary btn-sm">📧 Send Report</button></form>
+</div>
+{% endif %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;" class="two-col">
+  <div class="card">
+    <div class="card-header"><span class="card-title">Recently Added</span><a href="{{ url_for('medicines') }}" class="btn btn-secondary btn-sm">All →</a></div>
+    <div class="table-wrap"><table><thead><tr><th>Medicine</th><th>Qty</th><th>Expiry</th></tr></thead><tbody>
+      {% for m in recent %}<tr><td><div class="medicine-name">{{ m.name }}</div><div class="medicine-mfg">{{ m.get('manufacturer','—') }}</div></td><td>{% if m.quantity<=10 %}<span class="badge badge-red">{{ m.quantity }}</span>{% else %}<span class="badge badge-green">{{ m.quantity }}</span>{% endif %}</td><td>{% if m.expiry_date<today %}<span class="badge badge-red">Expired</span>{% else %}<span style="font-size:0.78rem;color:var(--text2);">{{ m.expiry_date }}</span>{% endif %}</td></tr>{% else %}<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:20px;">No medicines yet.</td></tr>{% endfor %}
+    </tbody></table></div>
+    <div class="med-card-list" style="padding:12px;">{% for m in recent %}<div class="med-card"><div class="med-card-top"><div><div class="med-card-name">{{ m.name }}</div><div class="med-card-mfg">{{ m.get('manufacturer','—') }}</div></div>{% if m.expiry_date<today %}<span class="badge badge-red">Expired</span>{% elif m.quantity<=10 %}<span class="badge badge-orange">Low</span>{% else %}<span class="badge badge-green">OK</span>{% endif %}</div><div style="display:flex;gap:8px;"><span class="badge badge-gray">Qty: {{ m.quantity }}</span><span class="badge badge-gray">{{ m.expiry_date }}</span></div></div>{% else %}<p style="text-align:center;color:var(--text3);padding:16px;font-size:0.85rem;">No medicines yet.</p>{% endfor %}</div>
+  </div>
+  <div class="card">
+    <div class="card-header"><span class="card-title">⚠ Low Stock</span><a href="{{ url_for('medicines') }}?filter=low" class="btn btn-secondary btn-sm">All →</a></div>
+    <div class="table-wrap"><table><thead><tr><th>Medicine</th><th>Qty</th><th>Action</th></tr></thead><tbody>
+      {% for m in low_items %}<tr><td><div class="medicine-name">{{ m.name }}</div><div class="medicine-mfg">{{ m.get('category','—') }}</div></td><td><span class="badge badge-red">{{ m.quantity }}</span></td><td><a href="{{ url_for('edit_medicine', med_id=m._id) }}" class="btn btn-secondary btn-sm">Restock</a></td></tr>{% else %}<tr><td colspan="3" style="text-align:center;color:var(--text3);padding:20px;">✓ All stock OK</td></tr>{% endfor %}
+    </tbody></table></div>
+    <div class="med-card-list" style="padding:12px;">{% for m in low_items %}<div class="med-card"><div class="med-card-top"><div><div class="med-card-name">{{ m.name }}</div><div class="med-card-mfg">{{ m.get('category','—') }}</div></div><span class="badge badge-red">{{ m.quantity }} left</span></div><a href="{{ url_for('edit_medicine', med_id=m._id) }}" class="btn btn-secondary btn-sm btn-full">Restock →</a></div>{% else %}<p style="text-align:center;color:var(--text3);padding:16px;font-size:0.85rem;">✓ All stock healthy</p>{% endfor %}</div>
+  </div>
+</div>
+{% endblock %}

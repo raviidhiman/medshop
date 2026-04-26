@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}Email Settings — MedStock Pro{% endblock %}
+{% block page_title %}Email & Alert Settings{% endblock %}
+{% block topbar_actions %}
+<a href="{{ url_for('dashboard') }}" class="btn btn-secondary btn-sm">← Dashboard</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:640px; margin:0 auto;">
+
+  <!-- Auto Alert Status Banner -->
+  <div style="background:rgba(61,214,245,0.06);border:1px solid rgba(61,214,245,0.2);
+              border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;
+              display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <div style="width:10px;height:10px;border-radius:50%;background:var(--accent2);
+                box-shadow:0 0 8px var(--accent2);flex-shrink:0;animation:pulse 2s infinite;"></div>
+    <div style="flex:1;">
+      <strong style="color:var(--accent2);font-size:0.9rem;">🤖 Auto Alert Scheduler is Running</strong>
+      <p style="font-size:0.78rem;color:var(--text2);margin-top:3px;">
+        Checks inventory every day at <strong style="color:var(--accent);">{{ alert_hour }}:{{ '%02d'|format(alert_minute) }} AM</strong>
+        and sends email automatically if issues are found.
+      </p>
+    </div>
+    <form method="POST" action="{{ url_for('send_alert') }}">
+      <button type="submit" class="btn btn-secondary btn-sm" style="flex-shrink:0;">
+        📧 Send Now
+      </button>
+    </form>
+  </div>
+  <style>
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  </style>
+
+  <!-- Gmail Settings -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header">
+      <span class="card-title">📧 Gmail Configuration</span>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('settings') }}">
+        <div class="form-grid">
+
+          <div class="form-group full">
+            <label>Your Gmail Address (sender)</label>
+            <input type="email" name="gmail"
+                   value="{{ gmail if gmail != 'your_gmail@gmail.com' else '' }}"
+                   placeholder="yourshop@gmail.com" required>
+          </div>
+
+          <div class="form-group full">
+            <label>Gmail App Password</label>
+            <input type="password" name="password"
+                   placeholder="xxxx xxxx xxxx xxxx (16 characters)" required>
+            <span style="font-size:0.73rem;color:var(--text3);margin-top:3px;">
+              ⚠️ NOT your Gmail login password — see instructions below.
+            </span>
+          </div>
+
+          <div class="form-group full">
+            <label>Send Alerts To (recipient email)</label>
+            <input type="email" name="notify_email"
+                   value="{{ notify }}"
+                   placeholder="ravidhiman8673@gmail.com" required>
+          </div>
+
+          <div class="form-group">
+            <label>Daily Alert Hour (0–23)</label>
+            <input type="number" name="alert_hour"
+                   value="{{ alert_hour }}" min="0" max="23"
+                   inputmode="numeric">
+            <span style="font-size:0.73rem;color:var(--text3);margin-top:3px;">
+              e.g. 9 = 9:00 AM, 18 = 6:00 PM
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label>Daily Alert Minute (0–59)</label>
+            <input type="number" name="alert_minute"
+                   value="{{ alert_minute }}" min="0" max="59"
+                   inputmode="numeric">
+            <span style="font-size:0.73rem;color:var(--text3);margin-top:3px;">
+              e.g. 0 = :00, 30 = :30
+            </span>
+          </div>
+
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:18px;padding-top:16px;
+                    border-top:1px solid var(--border);flex-wrap:wrap;">
+          <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">
+            💾 Save Settings
+          </button>
+          <form method="POST" action="{{ url_for('send_alert') }}" style="flex:1;">
+            <button type="submit" class="btn btn-secondary btn-full">
+              📧 Send Test Alert Now
+            </button>
+          </form>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- How Auto Alert Works -->
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-header">
+      <span class="card-title">🤖 How Automatic Alerts Work</span>
+    </div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="background:var(--accent);color:var(--bg);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">1</span>
+          <div>
+            <strong style="font-size:0.88rem;">App starts → Scheduler starts automatically</strong>
+            <p style="font-size:0.8rem;color:var(--text2);margin-top:3px;">Every time your app runs (locally or on Render), the background scheduler starts in a separate thread.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="background:var(--accent);color:var(--bg);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">2</span>
+          <div>
+            <strong style="font-size:0.88rem;">Every day at your chosen time</strong>
+            <p style="font-size:0.8rem;color:var(--text2);margin-top:3px;">The scheduler wakes up and scans your MongoDB inventory for expired, out-of-stock, low stock, and expiring soon medicines.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="background:var(--accent);color:var(--bg);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">3</span>
+          <div>
+            <strong style="font-size:0.88rem;">Sends email only if issues found</strong>
+            <p style="font-size:0.8rem;color:var(--text2);margin-top:3px;">If everything is healthy, no email is sent. If problems exist, a detailed alert email is sent to your inbox automatically.</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="background:var(--accent);color:var(--bg);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">4</span>
+          <div>
+            <strong style="font-size:0.88rem;">One email per day maximum</strong>
+            <p style="font-size:0.8rem;color:var(--text2);margin-top:3px;">The scheduler tracks when it last sent and will never send duplicate emails on the same day.</p>
+          </div>
+        </div>
+
+        <!-- Alert conditions -->
+        <div style="background:var(--surface2);border-radius:var(--radius-sm);padding:14px;margin-top:4px;">
+          <p style="font-size:0.8rem;font-weight:600;margin-bottom:10px;color:var(--text);">Triggers an email when:</p>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.82rem;">
+              <span>❌</span><span style="color:var(--text2);">Any medicine has <strong style="color:var(--danger);">quantity = 0</strong> (out of stock)</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.82rem;">
+              <span>🚫</span><span style="color:var(--text2);">Any medicine's <strong style="color:var(--danger);">expiry date has passed</strong></span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.82rem;">
+              <span>⚠️</span><span style="color:var(--text2);">Any medicine has <strong style="color:var(--warn);">quantity ≤ 10</strong> (low stock)</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:0.82rem;">
+              <span>⏳</span><span style="color:var(--text2);">Any medicine expires <strong style="color:var(--warn);">within 30 days</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- App Password Instructions -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">🔑 How to Get Gmail App Password</span>
+    </div>
+    <div class="card-body">
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="background:var(--surface3);color:var(--text);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">1</span>
+          <div>
+            <strong style="font-size:0.88rem;">Enable 2-Step Verification</strong>
+            <p style="font-size:0.8rem;color:var(--text2);margin-top:3px;">
+              Go to <a href="https://myaccount.google.com/security" target="_blank" style="color:var(--accent);">myaccount.google.com/security</a> → Turn on 2-Step Verification
+            </p>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="background:var(--surface3);color:var(--text);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">2</span>
+          <div>
+            <strong style="font-size:0.88rem;">Open App Passwords page</strong>
+            <p style="font-size:0.8rem;color:var(--text2);margin-top:3px;">
+              Go to <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:var(--accent);">myaccount.google.com/apppasswords</a>
+            </p>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="background:var(--surface3);color:var(--text);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">3</span>
+          <div>
+            <strong style="font-size:0.88rem;">Create password for MedStock</strong>
+            <p style="font-size:0.8rem;color:var(--text2);margin-top:3px;">Type <strong>MedStock</strong> in the app name box → click <strong>Create</strong></p>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="background:var(--surface3);color:var(--text);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">4</span>
+          <div>
+            <strong style="font-size:0.88rem;">Copy the 16-character password</strong>
+            <p style="font-size:0.8rem;color:var(--text2);margin-top:3px;">
+              Looks like: <code style="background:var(--surface2);padding:2px 8px;border-radius:4px;color:var(--accent);font-size:0.85rem;">abcd efgh ijkl mnop</code>
+              — paste this above.
+            </p>
+          </div>
+        </div>
+        <div style="background:rgba(61,214,245,0.06);border:1px solid rgba(61,214,245,0.15);
+                    border-radius:var(--radius-sm);padding:12px 14px;">
+          <p style="font-size:0.8rem;color:var(--text2);line-height:1.6;">
+            💡 <strong style="color:var(--accent);">For Render deployment</strong> — add these in
+            Render → Environment tab so they persist after redeploy:<br>
+            <code style="color:var(--accent2);font-size:0.78rem;">GMAIL_ADDRESS</code> &nbsp;
+            <code style="color:var(--accent2);font-size:0.78rem;">GMAIL_PASSWORD</code> &nbsp;
+            <code style="color:var(--accent2);font-size:0.78rem;">NOTIFY_EMAIL</code> &nbsp;
+            <code style="color:var(--accent2);font-size:0.78rem;">ALERT_HOUR</code> &nbsp;
+            <code style="color:var(--accent2);font-size:0.78rem;">ALERT_MINUTE</code>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
