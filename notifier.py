@@ -5,7 +5,7 @@ from datetime import date, timedelta
 import os
 
 GMAIL_ADDRESS  = os.environ.get("GMAIL_ADDRESS",  "ravidhiman8673@gmail.com")
-GMAIL_PASSWORD = os.environ.get("GMAIL_PASSWORD", "your_app_password_here")
+GMAIL_PASSWORD = os.environ.get("GMAIL_PASSWORD", "iqur rwmq kjpb zoxm")
 NOTIFY_EMAIL   = os.environ.get("NOTIFY_EMAIL",   "ravicsc444@gmail.com")
 
 EXPIRY_WARNING_DAYS = 30
