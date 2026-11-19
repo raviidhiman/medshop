@@ -4,9 +4,9 @@ from email.mime.text import MIMEText
 from datetime import date, timedelta
 import os
 
-GMAIL_ADDRESS  = os.environ.get("GMAIL_ADDRESS",  "ravidhiman8673@gmail.com")
-GMAIL_PASSWORD = os.environ.get("GMAIL_PASSWORD", "iqur rwmq kjpb zoxm")
-NOTIFY_EMAIL   = os.environ.get("NOTIFY_EMAIL",   "ravicsc444@gmail.com")
+GMAIL_ADDRESS  = os.environ.get("GMAIL_ADDRESS",  "")
+GMAIL_PASSWORD = os.environ.get("GMAIL_PASSWORD", "")
+NOTIFY_EMAIL   = os.environ.get("NOTIFY_EMAIL",   "")
 
 EXPIRY_WARNING_DAYS = 30
 LOW_STOCK_THRESHOLD = 10
