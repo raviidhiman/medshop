@@ -3,9 +3,9 @@ from datetime import datetime
 from urllib.parse import quote_plus
 import os
 
-MONGO_USERNAME = "raviidhiman"
-MONGO_PASSWORD = "Ravi@Medshop123"
-MONGO_CLUSTER  = "medshop.wi6y5tf.mongodb.net"
+MONGO_USERNAME = ""
+MONGO_PASSWORD = ""
+MONGO_CLUSTER  = ""
 DB_NAME        = "medshop"
 
 username  = quote_plus(MONGO_USERNAME)
