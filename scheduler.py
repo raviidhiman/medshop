@@ -1,13 +1,4 @@
-"""
-scheduler.py — Automatic daily email alert system
-Uses Python's built-in threading — no extra packages needed.
 
-How it works:
-- Runs a background thread when the Flask app starts
-- Checks inventory every day at 9:00 AM
-- Sends email automatically if any medicines are expired or low stock
-- Logs everything to console so you can see it working
-"""
 
 import threading
 import time
